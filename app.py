@@ -167,6 +167,44 @@ class CalendarTable(DataTable):
             if date is not None:
                 self.post_message(self.DateSelected(date))
 
+    def on_data_table_cell_highlighted(self, event: DataTable.CellHighlighted) -> None:  # type: ignore[attr-defined]
+        """Update todos when cursor moves with arrow keys."""
+        row = None
+        col = None
+        coord = getattr(event, "coordinate", None)
+        if coord is not None:
+            row = getattr(coord, "row", None)
+            col = getattr(coord, "column", None)
+            if row is None or col is None:
+                if isinstance(coord, tuple) and len(coord) >= 2:
+                    row, col = coord[0], coord[1]
+        if row is None:
+            row = getattr(event, "row", None)
+        if col is None:
+            col = getattr(event, "column", None)
+
+        if isinstance(row, int) and isinstance(col, int):
+            date = self._cell_to_date.get((row, col))
+            if date is not None:
+                self.post_message(self.DateSelected(date))
+
+    def on_data_table_cursor_moved(self, event) -> None:  # fallback for older/newer APIs
+        """Compatibility: some Textual versions emit CursorMoved."""
+        row = getattr(event, "row", None)
+        col = getattr(event, "column", None)
+        if row is None or col is None:
+            coord = getattr(event, "coordinate", None)
+            if coord is not None:
+                row = getattr(coord, "row", None)
+                col = getattr(coord, "column", None)
+                if row is None or col is None:
+                    if isinstance(coord, tuple) and len(coord) >= 2:
+                        row, col = coord[0], coord[1]
+        if isinstance(row, int) and isinstance(col, int):
+            date = self._cell_to_date.get((row, col))
+            if date is not None:
+                self.post_message(self.DateSelected(date))
+
 
 # ----------------------------
 # Todo Panel
