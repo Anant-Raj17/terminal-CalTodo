@@ -1,0 +1,55 @@
+Screen {
+  layout: vertical;
+}
+
+#main {
+  layout: horizontal;
+  height: 1fr;
+}
+
+#calendar-pane {
+  width: 2fr;
+  height: 1fr;
+  layout: vertical;
+}
+
+#calendar-title {
+  padding: 1 1 0 1;
+  content-align: left middle;
+  text-style: bold;
+}
+
+#calendar {
+  width: 1fr;
+  height: 1fr;
+  border: tall $secondary;
+  margin: 1 1 1 1;
+}
+
+#divider {
+  width: 1;
+  background: $surface 30%;
+}
+
+#todo {
+  width: 3fr;
+  height: 1fr;
+  layout: vertical;
+  border: tall $secondary;
+  margin: 1 1 1 1;
+}
+
+#todo-date {
+  padding: 1 1;
+  content-align: left middle;
+}
+
+#todo ListView {
+  height: 1fr;
+  margin: 0 1 0 1;
+}
+
+#todo Input#todo-input {
+  height: 3;
+  margin: 1;
+}
