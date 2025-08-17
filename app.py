@@ -325,12 +325,25 @@ class TodoPanel(Widget):
         lv = self.query_one(ListView)
         lv.clear()
         tasks = self.app_get_tasks()
+        # Calculate an available width hint to encourage wrapping
+        try:
+            avail = max(10, int(getattr(lv.size, "width", 0)) - 2)
+        except Exception:
+            avail = 40
         for t in tasks:
             prefix = "✓ " if t.done else "• "
             text = f"{prefix}{t.text}"
             # Wrap long task names within the list width
             renderable = Text(text, no_wrap=False, overflow="fold")
-            lv.append(ListItem(Label(renderable)))
+            item = Static(renderable, id="todo-text", expand=True)
+            # Hint width to force wrapping when ListView doesn't constrain children
+            try:
+                item.styles.width = avail  # type: ignore[attr-defined]
+                item.styles.text_wrap = "wrap"  # type: ignore[attr-defined]
+                item.styles.overflow_x = "hidden"  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            lv.append(ListItem(item))
         if preserve_highlight and tasks:
             try:
                 lv.index = max(0, min(self._highlight_index, len(tasks) - 1))  # type: ignore[attr-defined]
