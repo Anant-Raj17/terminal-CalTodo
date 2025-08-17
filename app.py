@@ -24,6 +24,7 @@ from textual.widgets import (
     Static,
 )
 from textual.events import Key
+from rich.text import Text
 
 
 # ----------------------------
@@ -327,7 +328,9 @@ class TodoPanel(Widget):
         for t in tasks:
             prefix = "✓ " if t.done else "• "
             text = f"{prefix}{t.text}"
-            lv.append(ListItem(Label(text)))
+            # Wrap long task names within the list width
+            renderable = Text(text, no_wrap=False, overflow="fold")
+            lv.append(ListItem(Label(renderable)))
         if preserve_highlight and tasks:
             try:
                 lv.index = max(0, min(self._highlight_index, len(tasks) - 1))  # type: ignore[attr-defined]
