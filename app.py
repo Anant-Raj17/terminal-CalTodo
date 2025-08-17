@@ -218,6 +218,12 @@ class TodoPanel(Widget):
             event.input.value = ""
             self.refresh_list()
             event.input.focus()
+        else:
+            # Empty submit: move focus to tasks list
+            try:
+                self.query_one(ListView).focus()
+            except Exception:
+                pass
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:  # type: ignore[attr-defined]
         idx = getattr(event, "index", None)
@@ -365,26 +371,10 @@ class CalTodoApp(App):
             pass
 
     def action_swap_focus(self) -> None:
-        """Toggle focus between calendar and todo list."""
+        """Focus the todo input field from anywhere."""
         try:
-            cal = self.query_one("#calendar", CalendarTable)
             todo = self.query_one("#todo", TodoPanel)
-            # Determine if focus is currently within todo panel
-            in_todo = False
-            try:
-                in_todo = getattr(todo, "has_focus", False)
-                # If container, check descendants
-                in_todo = in_todo or any(getattr(w, "has_focus", False) for w in todo.query("*"))
-            except Exception:
-                pass
-            if in_todo:
-                cal.focus()
-            else:
-                # Focus list inside todo for immediate keyboard control
-                try:
-                    todo.query_one(ListView).focus()
-                except Exception:
-                    todo.focus()
+            todo.query_one(Input).focus()
         except Exception:
             pass
 
