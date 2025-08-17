@@ -54,6 +54,17 @@ Screen {
 #todo ListView {
   height: 1fr;
   margin: 0 1 0 1;
+  overflow: auto;
+}
+
+#todo ListView > ListItem {
+  height: auto;
+}
+
+#todo ListView Label {
+  width: 1fr;
+  text-wrap: wrap;
+  content-align: left top;
 }
 
 #todo Input#todo-input {
