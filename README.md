@@ -38,7 +38,7 @@ python -m venv .venv
   - Arrow keys: move between days
   - j / k: previous / next month
   - t: jump to today (also updates todo list)
-  - s: focus the todo input
+  - s: toggle focus (calendar <-> todo input)
   - Click date: load that date's todos
 - **Todos (`TodoPanel`)**
   - Type in input + Enter: add task
@@ -47,9 +47,10 @@ python -m venv .venv
   - Enter or x: toggle done/undone
   - Delete/Backspace: delete task
   - Esc: focus the list
+  - s: toggle focus (calendar <-> todo input)
 - **App**
   - Ctrl+T: jump to today from anywhere
-  - Ctrl+S: focus the todo input from anywhere
+  - Ctrl+S: toggle focus (calendar <-> todo input)
   - q: quit
 
 ## Persistence

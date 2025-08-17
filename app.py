@@ -371,10 +371,26 @@ class CalTodoApp(App):
             pass
 
     def action_swap_focus(self) -> None:
-        """Focus the todo input field from anywhere."""
+        """Toggle focus between calendar and todo input."""
         try:
+            cal = self.query_one("#calendar", CalendarTable)
             todo = self.query_one("#todo", TodoPanel)
-            todo.query_one(Input).focus()
+            # Check if focus is currently inside todo (input or list)
+            in_todo = False
+            try:
+                in_todo = getattr(todo, "has_focus", False) or any(
+                    getattr(w, "has_focus", False) for w in todo.query("*")
+                )
+            except Exception:
+                pass
+            if in_todo:
+                cal.focus()
+            else:
+                # Focus the input specifically
+                try:
+                    todo.query_one(Input).focus()
+                except Exception:
+                    todo.focus()
         except Exception:
             pass
 
