@@ -47,9 +47,10 @@ class CalendarTable(DataTable):
             super().__init__()
 
     BINDINGS = [
-        Binding("left", "prev_month", "Prev"),
-        Binding("right", "next_month", "Next"),
+        Binding("j", "prev_month", "Prev"),
+        Binding("k", "next_month", "Next"),
         Binding("t", "today", "Today"),
+        Binding("s", "swap_focus", show=False),
     ]
 
     year = var(int(dt.date.today().year))
@@ -135,6 +136,15 @@ class CalendarTable(DataTable):
         today = dt.date.today()
         self.year, self.month = today.year, today.month
         self.reload_month()
+        # Ensure listeners (e.g., TodoPanel) update to today's tasks
+        self.post_message(self.DateSelected(today))
+
+    def action_swap_focus(self) -> None:
+        # Delegate to app to centralize logic
+        try:
+            self.app.action_swap_focus()
+        except Exception:
+            pass
 
     def on_data_table_cell_selected(self, event: DataTable.CellSelected) -> None:  # type: ignore[attr-defined]
         # Be tolerant of Textual API differences across versions
@@ -175,6 +185,7 @@ class TodoPanel(Widget):
         Binding("x", "toggle_task", show=False),
         Binding("delete", "delete_task", "Delete"),
         Binding("escape", "focus_list", show=False),
+        Binding("s", "swap_focus", show=False),
     ]
 
     def __init__(self, **kwargs) -> None:
@@ -257,6 +268,13 @@ class TodoPanel(Widget):
     def action_focus_list(self) -> None:
         self.query_one(ListView).focus()
 
+    def action_swap_focus(self) -> None:
+        # Delegate to app to centralize logic
+        try:
+            self.app.action_swap_focus()
+        except Exception:
+            pass
+
     # Helpers
     def refresh_list(self, preserve_highlight: bool = False) -> None:
         lv = self.query_one(ListView)
@@ -286,6 +304,9 @@ class CalTodoApp(App):
     CSS_PATH = "styles.tcss"
     BINDINGS = [
         Binding("q", "quit", "Quit"),
+        Binding("t", "today", "Today"),
+        Binding("ctrl+t", "today", show=False),
+        Binding("ctrl+s", "swap_focus", show=False),
     ]
 
     def __init__(self) -> None:
@@ -294,12 +315,15 @@ class CalTodoApp(App):
         # Persist to a JSON file in project directory
         self._persist_path: Path = Path("tasks.json")
         self._load_all_tasks()
+        # Track last known date for rollover
+        self._last_date: dt.date = dt.date.today()
 
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal(id="main"):
             with Vertical(id="calendar-pane"):
-                yield Label("", id="calendar-title")
+                with Horizontal(id="calendar-header"):
+                    yield Label("", id="calendar-title")
                 yield CalendarTable(id="calendar")
             yield Static("", id="divider")
             yield TodoPanel(id="todo")
@@ -327,6 +351,43 @@ class CalTodoApp(App):
         month_name = pycalendar.month_name[event.month]
         label.update(f"{month_name} {event.year}")
 
+    def action_today(self) -> None:
+        """Jump calendar and todos to today's date."""
+        try:
+            cal = self.query_one("#calendar", CalendarTable)
+            cal.action_today()
+        except Exception:
+            pass
+        try:
+            panel = self.query_one("#todo", TodoPanel)
+            panel.set_date(dt.date.today())
+        except Exception:
+            pass
+
+    def action_swap_focus(self) -> None:
+        """Toggle focus between calendar and todo list."""
+        try:
+            cal = self.query_one("#calendar", CalendarTable)
+            todo = self.query_one("#todo", TodoPanel)
+            # Determine if focus is currently within todo panel
+            in_todo = False
+            try:
+                in_todo = getattr(todo, "has_focus", False)
+                # If container, check descendants
+                in_todo = in_todo or any(getattr(w, "has_focus", False) for w in todo.query("*"))
+            except Exception:
+                pass
+            if in_todo:
+                cal.focus()
+            else:
+                # Focus list inside todo for immediate keyboard control
+                try:
+                    todo.query_one(ListView).focus()
+                except Exception:
+                    todo.focus()
+        except Exception:
+            pass
+
     def on_mount(self) -> None:
         # Ensure the calendar title is initialized on startup
         try:
@@ -336,6 +397,24 @@ class CalTodoApp(App):
             label.update(f"{month_name} {cal.year}")
         except Exception:
             pass
+        # Set interval to check for date change every 60 seconds
+        self.set_interval(60, self._tick_day_change)
+
+    def _tick_day_change(self) -> None:
+        today = dt.date.today()
+        if today != self._last_date:
+            self._last_date = today
+            # Jump calendar and todo panel to today
+            try:
+                cal = self.query_one("#calendar", CalendarTable)
+                cal.action_today()
+            except Exception:
+                pass
+            try:
+                panel = self.query_one("#todo", TodoPanel)
+                panel.set_date(today)
+            except Exception:
+                pass
 
     # Persistence helpers
     def _load_all_tasks(self) -> None:

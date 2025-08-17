@@ -34,17 +34,22 @@ python -m venv .venv
 ```
 
 ## Keybindings
-- Calendar (`CalendarTable`):
-  - Left/Right: previous/next month
-  - t: jump to current month
+- **Calendar (`CalendarTable`)**
+  - Arrow keys: move between days
+  - j / k: previous / next month
+  - t: jump to today (also updates todo list)
+  - s: swap focus with todo list
   - Click date: load that date's todos
-- Todos (`TodoPanel`):
+- **Todos (`TodoPanel`)**
   - Type in input + Enter: add task
   - Up/Down: move highlight
   - Enter or x: toggle done/undone
   - Delete/Backspace: delete task
   - Esc: focus the list
-- App:
+  - s: swap focus with calendar
+- **App**
+  - Ctrl+T: jump to today from anywhere
+  - Ctrl+S: swap focus from anywhere
   - q: quit
 
 ## Persistence
