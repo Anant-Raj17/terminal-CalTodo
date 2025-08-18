@@ -221,10 +221,12 @@ class TodoPanel(Widget):
 
     BINDINGS = [
         Binding("enter", "toggle_task", "Toggle"),
-        Binding("x", "toggle_task", show=False),
         Binding("delete", "delete_task", "Delete"),
         Binding("escape", "focus_list", show=False),
         Binding("s", "swap_focus", show=False),
+        Binding("x", "cut_task", "Cut"),
+        Binding("p", "paste_task", "Paste"),
+        Binding("n", "move_next_day", "Next Day"),
     ]
 
     def __init__(self, **kwargs) -> None:
@@ -303,6 +305,65 @@ class TodoPanel(Widget):
         except Exception:
             pass
 
+    def action_cut_task(self) -> None:
+        tasks = self.app_get_tasks()
+        if not tasks:
+            return
+        idx = max(0, min(self._highlight_index, len(tasks) - 1))
+        task = tasks.pop(idx)
+        try:
+            self.app._clipboard_task = Task(text=task.text, done=task.done)  # type: ignore[attr-defined]
+        except Exception:
+            pass
+        self._highlight_index = max(0, min(self._highlight_index, len(tasks) - 1))
+        self.refresh_list(preserve_highlight=True)
+        try:
+            self.app.save_all_tasks()
+        except Exception:
+            pass
+
+    def action_paste_task(self) -> None:
+        try:
+            clip = getattr(self.app, "_clipboard_task", None)
+        except Exception:
+            clip = None
+        if clip is None:
+            return
+        tasks = self.app_get_tasks()
+        tasks.append(Task(text=clip.text, done=clip.done))
+        # Clear clipboard after paste
+        try:
+            self.app._clipboard_task = None  # type: ignore[attr-defined]
+        except Exception:
+            pass
+        self.refresh_list(preserve_highlight=True)
+        try:
+            self.app.save_all_tasks()
+        except Exception:
+            pass
+
+    def action_move_next_day(self) -> None:
+        tasks = self.app_get_tasks()
+        if not tasks:
+            return
+        idx = max(0, min(self._highlight_index, len(tasks) - 1))
+        task = tasks.pop(idx)
+        next_date = self.current_date + dt.timedelta(days=1)
+        try:
+            self.app.add_task_for_date(next_date, task.text)
+            # Preserve done status when moving
+            moved_list = self.app.get_tasks_for_date(next_date)
+            if moved_list:
+                moved_list[-1].done = task.done
+        except Exception:
+            pass
+        self._highlight_index = max(0, min(self._highlight_index, len(tasks) - 1))
+        self.refresh_list(preserve_highlight=True)
+        try:
+            self.app.save_all_tasks()
+        except Exception:
+            pass
+
     def on_key(self, event: Key) -> None:
         # Support Delete/Backspace when list has focus
         lv = self.query_one(ListView)
@@ -372,6 +433,7 @@ class CalTodoApp(App):
     def __init__(self) -> None:
         super().__init__()
         self._tasks_by_date: Dict[str, List[Task]] = {}
+        self._clipboard_task: Optional[Task] = None
         # Persist to a JSON file in project directory
         self._persist_path: Path = Path("tasks.json")
         self._load_all_tasks()

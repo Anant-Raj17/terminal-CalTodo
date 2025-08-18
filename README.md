@@ -44,7 +44,10 @@ python -m venv .venv
   - Type in input + Enter: add task
   - Enter on empty input: focus the task list
   - Up/Down: move highlight
-  - Enter or x: toggle done/undone
+  - Enter: toggle done/undone
+  - x: cut selected task
+  - p: paste task to the currently selected date
+  - n: move selected task to next day
   - Delete/Backspace: delete task
   - Esc: focus the list
   - s: toggle focus (calendar <-> todo input)
